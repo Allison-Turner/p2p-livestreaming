@@ -5,5 +5,5 @@ Allison Turner, Guanzhou Hu, and Vishrant Tripathi's workspace for 6.829 fall '1
 
 ## TODO List
 
-- [x] Prototyping (proof-of-concpet results)
+- [x] Prototyping (proof-of-concpet results, see README under `prototype/` folder)
 - [ ] ...
