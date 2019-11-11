@@ -10,10 +10,10 @@ class LivestreamingTopo(Topo):
 
                             h3 (CDN)
                              |
-                             | 2Mbps, 30ms
+                             | 2Mbps, 100ms
                              |
         h1 (broadcaster) --> s1 --> h2 (nearby viewer)
-               10Mbps, 5ms   :
+               10Mbps, 30ms  :
                             c0 (OF controller)
     """
 
@@ -26,8 +26,8 @@ class LivestreamingTopo(Topo):
         h2 = self.addHost('h2')
         h3 = self.addHost('h3')
 
-        lan_link_opts = dict(bw=10, delay='5ms')
-        cdn_link_opts = dict(bw=2, delay='30ms')
+        lan_link_opts = dict(bw=10, delay='30ms')
+        cdn_link_opts = dict(bw=2, delay='100ms')
         self.addLink(h1, s1, **lan_link_opts)
         self.addLink(h2, s1, **lan_link_opts)
         self.addLink(s1, h3, **cdn_link_opts)
