@@ -27,10 +27,12 @@ $ vagrant ssh
 
 And install the following dependencies:
 
+- `devscripts`, `moreutils`, `expect` by `apt`
 - [Mininet 2.0 full ver.](http://mininet.org/): Follow the "Get Started" Page - Option 2 and install everything
 - [Nginx & RTMP module](https://opensource.com/article/19/1/basic-live-video-streaming-server): Follow the post for how to install and setup Nginx to serve as an RTMP livestreaming server
 - [FFmpeg](https://trac.ffmpeg.org/wiki/StreamingGuide) by `sudo apt install ffmpeg`: A command-line-compatible multi-media tool. It supports streaming a pre-recorded video file to some server (A workaround for not being able to use OBS within VMs)
-- `rtmpdump` by `sudo apt install rtmpdump`: A command-line tool to pull an RTMP stream. It serves as a viewer
+- `rtmpdump` by `apt`: A command-line tool to pull an RTMP stream. It serves as a viewer
+- `mplayer` by `apt`: Same as above
 
 > Using OBS for real-time demonstration is not included yet. OBS cannot work within a Ubuntu server VM because it requires a graphic card access even if we only want to stream a pre-recorded video file. Meanwhile, all the OpenFlow networking experiments must run with Mininet, requiring a VM.
 >
@@ -50,18 +52,9 @@ The following is now only a sample run walkthrough, using a traditional L2 learn
     - Meaningful packets flying between hosts will then all appear in WireShark (Will be extremely helpful for designing & debugging OpenFlow controller logic)
 3. `$ ./src/pox/pox.py livestreaming.direct` to launch a POX controller
     - This controller (`livestreaming.direct`) is a basic L2 learning switch
-4. `$ sudo mn --custom src/topo.py --topo livestreaming_single,1 --link=tc --mac --controller remote --switch ovsk` in another terminal
-    - Mininet now launches
-    - `mininet> xterm hb hs hv1`, put these three hosts' terminal windows at side
-5. In service provider's terminal (`hs`): `nginx`
-6. In viewer's terminal (`hv1`): `rtmpdump -r rtmp://10.0.0.2/live/6829proj -o viewed.flv`
-    - It now waits for the server to have something to stream
-    - After the stream starts, it should show in real-time how many secs have been retrieved
-7. In broadcaster's terminal (`hb`): `ffmpeg -re -i videos/capture.flv -flvflags no_duration_filesize -max_muxing_queue_size 4096 -f flv rtmp://10.0.0.2/live/6829proj`
-    - Once the "Output" stream begins, the livestreaming procedure begins
-    - Delay can be roughly checked by eye as the difference between current output frame's `time` and `rtmpdump`'s downloaded length
+4. `$ sudo python src/live.py videos/30fps-600frames.flv 600` to run the test with a 600 frames video
 
-As on my Macbook, this experiment setting gives roughly 4-5 secs latency ;)
+As on my Macbook, this experiment setting gives roughly 12 secs latency ;)
 
 
 ## Manual Commands Memo
@@ -103,5 +96,20 @@ $ sudo mn -c
 $ ffmpeg -re -i <filename>.flv -flvflags no_duration_filesize -max_muxing_queue_size 8192 -f flv rtmp://<server_address>/live/6829proj
 
 # RTMPdump: Pulling the above RTMP stream from the server and save into a file.
-$ rtmpdump -r rtmp://localhost/live/6829proj -o <savename>.flv
+$ rtmpdump -r rtmp://<server_address>/live/6829proj -o <savename>.flv
+
+# MPlayer: Pulling exactly a specified number of frames to view.
+$ mplayer -nocorrect-pts -nocache -nosound -vo null -noidle -frames <num_frames> rtmp://<server_address>/live/6829proj
+```
+
+NOTE: `mplayer` will always miss 12 frames no matter under which frame rate (don't know why), so for a 300 frames video, set the player to pull 288 frames and it will terminate correctly.
+
+#### Video Tools
+
+```bash
+# FFmpeg: Check fps & exact number of frames in a video.
+ffmpeg -i <filename>.flv -map 0:v:0 -c copy -f null -
+
+# FFmpeg: Remove audio track, filter with certain fps, and crop at exact number of frames.
+ffmpeg -i <in_file>.flv -an -filter:v fps=fps=<target_fps> -frames <num_frames> <out_file>.flv
 ```

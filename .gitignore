@@ -21,4 +21,4 @@ src/pox/pox/lib/pxpcap/pxpcap_c/WpdPack
 src/pox/pox/lib/pxpcap/pxpcap.so
 src/pox/pypy/
 *.class
-
+**/output/

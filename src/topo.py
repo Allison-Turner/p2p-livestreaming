@@ -10,7 +10,7 @@ class LivestreamingSingleTopo(Topo):
 
                             hs (CDN)
                              |
-                             | 2Mbps, 100ms
+                             | 2Mbps, 300ms
                              |
         hb (broadcaster) --> s1 --> hv (nearby viewer(s))
                10Mbps, 30ms  :
@@ -29,7 +29,7 @@ class LivestreamingSingleTopo(Topo):
         hvs = [self.addHost('hv'+str(i)) for i in range(1, num_viewers+1)]
 
         lan_link_opts = dict(bw=10, delay='30ms')
-        cdn_link_opts = dict(bw=2, delay='100ms')
+        cdn_link_opts = dict(bw=2, delay='300ms')
         self.addLink(hb, s1, **lan_link_opts)
         for hv in hvs:
             self.addLink(hv, s1, **lan_link_opts)

@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#!/usr/bin/python
 
 # Usage: sudo python live.py
 
@@ -23,9 +23,9 @@ def _parse_latency(fv_name):
     """
     with open(fv_name, 'r') as fv:
         lines = fv.readlines()
-        assert(len(lines)>1)
+        assert len(lines)>1
         last = lines[-1].strip()
-        assert(len(last)>0)
+        assert len(last)>0
         return last
 
 
