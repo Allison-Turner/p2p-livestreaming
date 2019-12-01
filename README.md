@@ -6,14 +6,17 @@
 
 Allison Turner, Guanzhou Hu, and Vishrant Tripathi's workspace for 6.829 fall '19 final project on peer-to-peer optimizations to livestreaming.
 
+Presentation slides: [CLICK HERE](https://docs.google.com/presentation/d/1DvFXPU94F932dR3AAu87u9xZMteHArnPzpD0hii22aU/edit).
+
 
 ## TODO List
 
 - [x] Prototyping (proof-of-concpet results, see README under `prototype/` folder)
-- [ ] OpenFlow controller logic
+- [x] OpenFlow controller logic
 - [x] Host applications (`ffmpeg` on broadcaster + web server on CDN node + `rtmp` utils on viewers)
-- [ ] OBS support & testing (needs a Ubuntu Desktop machine...)
-- [ ] ...
+- [ ] OBS/FFmpeg/MPlayer graphics support & testing (needs a Ubuntu Desktop machine...)
+- [ ] Comprehensive experiment results
+- [ ] Report & presentation materials
 
 
 ## Preparations
@@ -32,16 +35,14 @@ And install the following dependencies:
 - [Nginx & RTMP module](https://opensource.com/article/19/1/basic-live-video-streaming-server): Follow the post for how to install and setup Nginx to serve as an RTMP livestreaming server
 - [FFmpeg](https://trac.ffmpeg.org/wiki/StreamingGuide) by `sudo apt install ffmpeg`: A command-line-compatible multi-media tool. It supports streaming a pre-recorded video file to some server (A workaround for not being able to use OBS within VMs)
 - `rtmpdump` by `apt`: A command-line tool to pull an RTMP stream. It serves as a viewer
-- `mplayer` by `apt`: Same as above
+- `mplayer` by `apt`: Same as above but much more powerful
 
-> Using OBS for real-time demonstration is not included yet. OBS cannot work within a Ubuntu server VM because it requires a graphic card access even if we only want to stream a pre-recorded video file. Meanwhile, all the OpenFlow networking experiments must run with Mininet, requiring a VM.
->
-> At presentation it would be the best if we can prepare a Ubuntu Desktop machine with all the Mininet stuff installed and working correctly. Then we can use the Linux version of OBS to perform the real-time desktop capturing demonstration.
+> Using OBS for real-time demonstration is not included yet. OBS cannot work within a Ubuntu server VM because it requires a graphic card access even if we only want to stream a pre-recorded video file.
 
 
 ## How to Run
 
-The following is now only a sample run walkthrough, using a traditional L2 learning switch w/o P2P optimizations.
+The following is an experiment walkthrough.
 
 1. Log into the Vagrant VM. You should be at the `/livestreaming` path.
     - Make at least 2 terminal windows here
@@ -51,6 +52,16 @@ The following is now only a sample run walkthrough, using a traditional L2 learn
     - Then, set display filter as required
 3. `$ ./src/pox/pox.py livestreaming.bypass` to launch our POX controller
 4. `$ sudo python src/live.py videos/30fps-600frames.flv output/viewed.flv` in another terminal to run the test
+
+Key files in this project include:
+
+```text
+/src/
+  |- live.py    # Aggregated experiment script
+  |- topo.py    # Mininet custom topology for our settings
+  |- hosts/*    # Livestreaming end host apps: CDN, broadcaster, viewer
+  |- pox/pox/livestreaming/*    # OpenFlow switches logic
+```
 
 
 ## Manual Commands Memo

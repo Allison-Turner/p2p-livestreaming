@@ -3,8 +3,8 @@
 # Usage: sudo python src/live.py <video_file> <dump_file>
 
 #
-# Currently OpenFlow switch can only supports 1 viewer and can only be
-# compatible very rigid RTMP logics ;)
+# Currently the OpenFlow switch can only support the simple topology with 1 viewer
+# and can only be compatible very rigid RTMP logics ;)
 #
 
 
@@ -20,7 +20,6 @@ from topo import LivestreamingSingleTopo
 
 ROOT_DIR = os.path.abspath(os.path.dirname(sys.argv[0])) + "/.."
 OUTPUT_DIR = ROOT_DIR + "/output"
-KEY = "6829proj"
 
 
 def _launch_service(net):
@@ -56,7 +55,6 @@ def _do_livestreaming(net, video_file, dump_file):
 
     # Perform the streaming experiment for sufficiently long time.
     time.sleep(30)
-
     print "Livestreaming experiment FINISH ;)"
 
 

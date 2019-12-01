@@ -1,6 +1,8 @@
+#
 # Modified based on the `forwarding.l2_learning` component.
 # MIT 6.829 Fall 2019, livestreaming project: Vishrant, Allison, and Guanzhou.
 # Initial copyright as follows.
+#
 
 # Copyright 2011-2012 James McCauley
 #
@@ -30,7 +32,6 @@ import pox.openflow.libopenflow_01 as of
 from pox.lib.util import dpid_to_str, str_to_dpid
 from pox.lib.util import str_to_bool
 import time
-import socket
 
 log = core.getLogger()
 
@@ -96,7 +97,7 @@ class RTMPControlPacket(object):
             if self.chunk_stream_id == 0:
                 self.chunk_stream_id = 64 + cg.next()
                 curr_pos += 1
-            if self.chunk_stream_id == 1:
+            elif if self.chunk_stream_id == 1:
                 self.chunk_stream_id = 64 + ((cg.next() << 8) | cg.next())
                 curr_pos += 2
             # Check chunk header type for header length.
@@ -200,8 +201,9 @@ class LearningSwitch(object):
     RTMP packets are treated specially, in order to implement the P2P
     steering property.
 
-    NOTE: Assuming only one viewer currently.
-    NOTE: CAN ONLY BE USED FOR ONE STREAM BEFORE RESTART!!!
+    NOTE: Assuming ONLY ONE viewer currently, no multicasting.
+    NOTE: CAN ONLY BE USED FOR ONE STREAM BEFORE RESTART.
+    NOTE: VIEWERS MUST BE LAUNCHED BEFORE BROADCASTERS.
     """
 
     def __init__(self, connection):
@@ -303,18 +305,13 @@ class LearningSwitch(object):
             """
             Send the packet out in normal way w/o installing a flow table entry.
             """
-            if packet.dst not in self.macToPort:
-                msg = of.ofp_packet_out()
-                msg.actions.append(of.ofp_action_output(port=of.OFPP_FLOOD))
-                msg.data = event.ofp
-                msg.in_port = event.port
-                self.connection.send(msg)
-            else:
-                msg = of.ofp_packet_out()
-                msg.actions.append(of.ofp_action_output(port=self.macToPort[packet.dst]))
-                msg.data = event.ofp
-                msg.in_port = event.port
-                self.connection.send(msg)
+            out_port = self.macToPort[packet.dst] if packet.dst in self.macToPort \
+                                                  else of.OFPP_FLOOD
+            msg = of.ofp_packet_out()
+            msg.actions.append(of.ofp_action_output(port=out_port))
+            msg.data = event.ofp
+            msg.in_port = event.port
+            self.connection.send(msg)
 
         def dump_record():
             """
@@ -372,7 +369,7 @@ class LearningSwitch(object):
 
         #
         # For all RTMP packets in this TCP packet, parse the RTMP payload
-        # for keywords. If match, record necessary about the end hosts,
+        # for keywords. If match, record necessary info about the end hosts,
         # and update the streaming status.
         #
         assert len(rtmp_packets) > 0
@@ -448,15 +445,7 @@ class LearningSwitch(object):
         normal_send()
 
         #
-        # If is in "ready to steer state", then install a flow table entry
-        # matching broadcaster -> service packets and diverge all of them to the
-        # viewer. Similarly, ACKs from viewer -> service are also diverged back.
-        #
-        # NOTE: Currently not copying the packet, so that the service node will
-        # no longer get the video once the steering starts.
-        #
-        # After successful installation, video contents should not be sent to
-        # this controller until the entry times out.
+        # If is in "ready to steer state", switch to P2P mode.
         #
         if self.status_vready and self.status_bready:
             assert self.vport is not None and \
@@ -465,7 +454,7 @@ class LearningSwitch(object):
 
             #
             # Set the switch to "normal" state. Effects:
-            #   1. Not actively capturing RTMP packets.
+            #   1. No longer actively capturing RTMP packets.
             #   2. Capture the next packets in the notification channels and
             #      set the notification.
             #
@@ -565,18 +554,13 @@ class LearningSwitch(object):
             """
             Send the packet out in normal way w/o installing a flow table entry.
             """
-            if packet.dst not in self.macToPort:
-                msg = of.ofp_packet_out()
-                msg.actions.append(of.ofp_action_output(port=of.OFPP_FLOOD))
-                msg.data = event.ofp
-                msg.in_port = event.port
-                self.connection.send(msg)
-            else:
-                msg = of.ofp_packet_out()
-                msg.actions.append(of.ofp_action_output(port=self.macToPort[packet.dst]))
-                msg.data = event.ofp
-                msg.in_port = event.port
-                self.connection.send(msg)
+            out_port = self.macToPort[packet.dst] if packet.dst in self.macToPort \
+                                                  else of.OFPP_FLOOD
+            msg = of.ofp_packet_out()
+            msg.actions.append(of.ofp_action_output(port=out_port))
+            msg.data = event.ofp
+            msg.in_port = event.port
+            self.connection.send(msg)
 
         log.debug("<NOTIFY> heartbeat %s -> %s" % (ip_packet.srcip, ip_packet.dstip))
 
@@ -590,10 +574,10 @@ class LearningSwitch(object):
                    self.sport is not None
             assert ip_packet.srcip == self.s_nw_addr
 
-            msg = of.ofp_packet_out()
+            msg_out = of.ofp_packet_out()
             out_port = self.macToPort[packet.dst] if packet.dst in self.macToPort \
                                                   else of.OFPP_FLOOD
-            msg.actions.append(of.ofp_action_output(port=out_port))
+            msg_out.actions.append(of.ofp_action_output(port=out_port))
 
             # Rewrite TCP payload to the peer's IP address.
             new_payload = None
@@ -605,15 +589,15 @@ class LearningSwitch(object):
                               .format(str(self.v_nw_addr))
             tcp_packet.set_payload(new_payload)
 
-            msg.data = packet
-            msg.in_port = event.port
-            self.connection.send(msg)
+            msg_out.data = packet
+            msg_out.in_port = event.port
+            self.connection.send(msg_out)
             log.info("<NOTIFY> Pushed \'%s\'' to %s" % (new_payload, ip_packet.dstip))
 
             # Install a drop entry for further notification heartbeats.
-            msg = of.ofp_flow_mod()
-            msg.match = of.ofp_match.from_packet(packet, event.port)
-            self.connection.send(msg)
+            msg_mod = of.ofp_flow_mod()
+            msg_mod.match = of.ofp_match.from_packet(packet, event.port)
+            self.connection.send(msg_mod)
             log.info("<NOTIFY> Drop entry installed!")
 
         else:
@@ -622,16 +606,25 @@ class LearningSwitch(object):
 
     def _handle_PacketIn(self, event):
         """
-        POX handler for an OpenFlow PacketIn event. RTMP packets are recognized
-        through the RTMP service port (default = 1935).
+        POX handler for an OpenFlow PacketIn event.
+        RTMP packets are recognized through the RTMP service port (default = 1935).
+        Notifications are recognized through the notification port (now = 42857).
         """
         tcp_packet = event.parsed.find('tcp')
+
+        # Once P2P is enabled/set-off, all RTMP packets will go through _handle_normal,
+        # which leads to a flow table entry to be installed. Thus, RTMP video chunks
+        # will not go through this controller.
         if not self.p2p_enabled and tcp_packet and \
            (tcp_packet.srcport == RTMP_PORT or tcp_packet.dstport == RTMP_PORT):
             self._handle_PacketIn_rtmp(event)
+
+        # Notifications channel is very lightweighted so the overhead neglectable.
         elif tcp_packet and \
              (tcp_packet.srcport == NOTIFY_PORT or tcp_packet.dstport == NOTIFY_PORT):
             self._handle_PacketIn_notify(event)
+        
+        # This branch leads to a flow table entry to be installed.
         else:
             self._handle_PacketIn_normal(event)
 
