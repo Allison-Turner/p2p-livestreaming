@@ -66,7 +66,8 @@ As on my Macbook, this experiment setting gives roughly 12 secs latency ;)
 $ sudo wireshark &
 
 # Capture filter = *any*
-# Display filter = openflow || (ip.addr==10.0.0.0/24 && !(tcp.port==22))
+
+# Display filter = rtmpt || (openflow_v1 && ip.addr==10.0.0.0/24)
 ```
 
 #### POX Controller
