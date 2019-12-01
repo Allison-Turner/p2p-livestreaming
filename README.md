@@ -48,13 +48,9 @@ The following is now only a sample run walkthrough, using a traditional L2 learn
     - Make sure X11 is working correctly
 2. `$ sudo wireshark &` to launch WireShark. Keep WireShark window at side.
     - In WireShark, capture with filter *any*
-    - Then, set display filter to `openflow || (ip.addr==10.0.0.0/24 && !(tcp.port==22))` (You can save this filter for easier use later)
-    - Meaningful packets flying between hosts will then all appear in WireShark (Will be extremely helpful for designing & debugging OpenFlow controller logic)
-3. `$ ./src/pox/pox.py livestreaming.direct` to launch a POX controller
-    - This controller (`livestreaming.direct`) is a basic L2 learning switch
-4. `$ sudo python src/live.py videos/30fps-600frames.flv 600` to run the test with a 600 frames video
-
-As on my Macbook, this experiment setting gives roughly 12 secs latency ;)
+    - Then, set display filter as required
+3. `$ ./src/pox/pox.py livestreaming.bypass` to launch our POX controller
+4. `$ sudo python src/live.py videos/30fps-600frames.flv output/viewed.flv` in another terminal to run the test
 
 
 ## Manual Commands Memo
@@ -66,7 +62,6 @@ As on my Macbook, this experiment setting gives roughly 12 secs latency ;)
 $ sudo wireshark &
 
 # Capture filter = *any*
-
 # Display filter = rtmpt || (openflow_v1 && ip.addr==10.0.0.0/24)
 ```
 
@@ -96,11 +91,17 @@ $ sudo mn -c
 # FFmpeg: Streaming a .flv file to an Nginx RTMP server, with key = 6829proj.
 $ ffmpeg -re -i <filename>.flv -flvflags no_duration_filesize -max_muxing_queue_size 8192 -f flv rtmp://<server_address>/live/6829proj
 
+# FFmpeg: P2P RTMP streaming broadcaster.
+$ ffmpeg -re -i <filename>.flv -flvflags no_duration_filesize -max_muxing_queue_size 8192 -f flv tcp://<client_address>:<port>
+
 # RTMPdump: Pulling the above RTMP stream from the server and save into a file.
 $ rtmpdump -r rtmp://<server_address>/live/6829proj -o <savename>.flv
 
-# MPlayer: Pulling exactly a specified number of frames to view.
-$ mplayer -nocorrect-pts -nocache -nosound -vo null -noidle -frames <num_frames> rtmp://<server_address>/live/6829proj
+# MPlayer: Pulling an RTMP stream to view.
+$ mplayer -nocorrect-pts -nocache -nosound -vo null -noidle [-frames <num_frames>] -dumpstream -dumpfile <dump_file> rtmp://<server_address>/live/6829proj
+
+# MPlayer: P2P RTMP streaming client.
+$ mplayer -nocorrect-pts -nocache -nosound -vo null -noidle [-frames <num_frames>] -dumpstream -dumpfile <dump_file> ffmpeg://tcp://<my_ip>:<port>?listen
 ```
 
 NOTE: `mplayer` will always miss 12 frames no matter under which frame rate (don't know why), so for a 300 frames video, set the player to pull 288 frames and it will terminate correctly.
