@@ -82,6 +82,7 @@ class Viewer(object):
                 "-vo", "null",
                 "-noidle",
                 # "-frames", str(num_frames),
+                "-dumpstream", "-dumpfile", self.dump_file,
                 "rtmp://%s/live/%s" % (source_ip, self.key),
                 "2>&1",
                 ">", out_file

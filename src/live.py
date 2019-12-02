@@ -53,8 +53,13 @@ def _do_livestreaming(net, video_file, dump_file):
     hb.cmd("python %s/src/hosts/broadcaster.py %s %s %s &" %
            (ROOT_DIR, hb.IP(), video_file, hs.IP()))
 
+
+    hb.popen("ping %s -i 0.5 -c 60 > %s/b_to_cdn.txt" % (hs.IP(), OUTPUT_DIR), shell = True)    
+    hb.popen("ping %s -i 0.5 -c 60 > %s/b_to_v.txt" % (hv.IP(), OUTPUT_DIR), shell = True)
+    hs.popen("ping %s -i 0.5 -c 60 > %s/cdn_to_v.txt" % (hv.IP(), OUTPUT_DIR), shell = True)        
+
     # Perform the streaming experiment for sufficiently long time.
-    time.sleep(30)
+    time.sleep(60)
     print "Livestreaming experiment FINISH ;)"
 
 
@@ -103,11 +108,12 @@ def livestremaing_test(video_file, dump_file):
     print "### Live streaming ###"
     _launch_service(net)
     _do_livestreaming(net, video_file, dump_file)
+    #time.sleep(20)
     _clean_all(net)
     
     # Parse the delay from the two logs 'output/hb.log', 'output/hv.log'.
     print "### Results ###"
-    print "Delta in termination = %d ms" % (_parse_delay(net),)
+    #print "Delta in termination = %d ms" % (_parse_delay(net),)
     net.stop()
 
 

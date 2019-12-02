@@ -97,7 +97,7 @@ class RTMPControlPacket(object):
             if self.chunk_stream_id == 0:
                 self.chunk_stream_id = 64 + cg.next()
                 curr_pos += 1
-            elif if self.chunk_stream_id == 1:
+            elif self.chunk_stream_id == 1:
                 self.chunk_stream_id = 64 + ((cg.next() << 8) | cg.next())
                 curr_pos += 2
             # Check chunk header type for header length.

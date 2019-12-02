@@ -1,0 +1,9 @@
+MPlayer 1.3.0 (Debian), built with gcc-7 (C) 2000-2016 MPlayer Team
+
+Playing rtmp://10.0.0.2/live/6829proj.
+libavformat version 57.83.100 (external)
+dump: 143360 bytes writtendump: 458752 bytes writtendump: 618496 bytes writtendump: 806912 bytes writtendump: 1044480 bytes writtendump: 1232896 bytes writtendump: 1470464 bytes writtendump: 1650688 bytes writtendump: 1753088 bytes writtendump: 1892352 bytes writtendump: 2035712 bytes writtendump: 2174976 bytes writtendump: 2318336 bytes writtendump: 2457600 bytes writtendump: 2600960 bytes writtendump: 2646016 bytes written
+dump: 2646016 bytes written to '/home/v/Desktop/new-p2p/src/hosts/../../output/viewed.flv'.
+Core dumped ;)
+
+Exiting... (End of file)

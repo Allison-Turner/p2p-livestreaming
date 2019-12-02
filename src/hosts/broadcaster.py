@@ -106,7 +106,7 @@ class Broadcaster(object):
                 "-re",
                 "-i", self.video_file,
                 "-flvflags", "no_duration_filesize",
-                "-max_muxing_queue_size", "8192",
+                #"-max_muxing_queue_size", "8192",
                 "-f", "flv",
                 "tcp://%s:%d" % (target_ip, PEER_PORT),
                 "2>&1",     # FFmpeg writes to stderr!!!
