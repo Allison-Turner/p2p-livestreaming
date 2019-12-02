@@ -82,6 +82,7 @@ class Viewer(object):
                 "-vo", "null",
                 "-noidle",
                 # "-frames", str(num_frames),
+                "-dumpstream", "-dumpfile", self.dump_file,
                 "rtmp://%s/live/%s" % (source_ip, self.key),
                 "2>&1",
                 ">", out_file
@@ -133,11 +134,15 @@ class Viewer(object):
         while True:
             notify_data = self.notify_sock.recv(1024).strip()
             if not notify_is_heartbeat(notify_data):
+
                 # Stop the original stream.
-                self.vfs_proc.terminate()
+                # self.vfs_proc.terminate()     # This will trigger _clean_up routine.
                 os.system("killall mplayer")
+                if os.path.exists(self.dump_file):
+                    os.remove(self.dump_file)
                 self.vfs_proc = None
                 print "[VIEW] Viewer <- Service connection END"
+
                 # Start the new receiver.
                 broadcaster_ip = parse_notify_ip(notify_data)
                 vfp_log = OUTPUT_DIR + "/vfp-" + self.my_ip + ".log"
@@ -147,7 +152,9 @@ class Viewer(object):
                 self.vfp_proc.start()
                 print "[VIEW] Viewer (%s) <- Broadcaster (%s) P2P START" % \
                       (self.my_ip, broadcaster_ip)
-                break   # Viewer breaks the loop once entered P2P stage.
+
+                break   # Viewer breaks the loop when P2P is established.
+
         if self.vfp_proc is not None:
             self.vfp_proc.join()
 

@@ -97,7 +97,7 @@ class RTMPControlPacket(object):
             if self.chunk_stream_id == 0:
                 self.chunk_stream_id = 64 + cg.next()
                 curr_pos += 1
-            elif if self.chunk_stream_id == 1:
+            elif self.chunk_stream_id == 1:
                 self.chunk_stream_id = 64 + ((cg.next() << 8) | cg.next())
                 curr_pos += 2
             # Check chunk header type for header length.
@@ -165,6 +165,9 @@ class RTMPControlPacket(object):
         return "publish" in self.payload and STREAM_KEY in self.payload
     def is_publish_start(self):
         return "onStatus" in self.payload and "NetStream.Publish.Start" in self.payload
+    def is_stream_begin(self):
+        return self.msg_length == 6 and \
+               ((ord(self.payload[0]) << 8) | ord(self.payload[1])) == 0x0000
 
 
 class LearningSwitch(object):
@@ -238,7 +241,9 @@ class LearningSwitch(object):
         self.status_vready = False
         self.status_bpublish = False
         self.status_bready = False
-        self.p2p_enabled = False
+        self.status_stream_begin = False
+        self.p2p_enabled = False    # When P2P is enabled.
+        self.p2p_set_off = False    # When stream begins but broadcaster unseen.
 
         # RTMP 12-byte strange unchunked packet buffer.
         self.prepend_buf = None
@@ -441,8 +446,25 @@ class LearningSwitch(object):
                 log.info("[RTMP] NetStream.Publish.Start")
                 dump_record()
 
+            # Service -> Viewer, stream begin message.
+            if rtmp_packet.is_stream_begin():
+                assert tcp_packet.srcport == RTMP_PORT
+                assert self.status_vready
+                self.status_stream_begin = True
+                log.info("[RTMP] Stream Begin 1")
+
         # Ensure that control packets are all sent out here.
         normal_send()
+
+        #
+        # If a stream begins but the broadcaster is unseen, it means the
+        # broadcaster is not in my local network. Stop watching RTMP.
+        #
+        if self.status_stream_begin and not self.status_bready:
+            assert self.vport is not None and \
+                   self.sport is not None
+            self.p2p_set_off = True
+            log.info("[STREAM] P2P is set to off...")
 
         #
         # If is in "ready to steer state", switch to P2P mode.
@@ -615,7 +637,7 @@ class LearningSwitch(object):
         # Once P2P is enabled/set-off, all RTMP packets will go through _handle_normal,
         # which leads to a flow table entry to be installed. Thus, RTMP video chunks
         # will not go through this controller.
-        if not self.p2p_enabled and tcp_packet and \
+        if not self.p2p_enabled and not self.p2p_set_off and tcp_packet and \
            (tcp_packet.srcport == RTMP_PORT or tcp_packet.dstport == RTMP_PORT):
             self._handle_PacketIn_rtmp(event)
 

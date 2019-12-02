@@ -42,6 +42,15 @@ def _do_livestreaming(net, video_file, dump_file):
     """
     hb, hs, hv = net.get('hb', 'hs', 'hv1')
 
+    # Start the ping trains.
+    print "Ping train START"
+    hb.cmd("ping -i 1 %s > %s/b2s.ping &" % (hs.IP(), OUTPUT_DIR),
+           shell=True)
+    hs.cmd("ping -i 1 %s > %s/s2v-%s.ping &" % (hv.IP(), OUTPUT_DIR, hv.IP()),
+           shell=True)
+    hb.cmd("ping -i 1 %s > %s/b2v-%s.ping &" % (hv.IP(), OUTPUT_DIR, hv.IP()),
+           shell=True)
+
     # Launch the viewer FIRST.
     print "Viewer 1 UP"
     hv.cmd("python %s/src/hosts/viewer.py %s %s %s &" %
@@ -54,7 +63,7 @@ def _do_livestreaming(net, video_file, dump_file):
            (ROOT_DIR, hb.IP(), video_file, hs.IP()))
 
     # Perform the streaming experiment for sufficiently long time.
-    time.sleep(30)
+    time.sleep(60)
     print "Livestreaming experiment FINISH ;)"
 
 
@@ -66,6 +75,9 @@ def _clean_all(net):
     hs.cmd("kill $(pgrep -f cdn-server.py)")
     hb.cmd("kill $(pgrep -f broadcaster.py)")
     hv.cmd("kill $(pgrep -f viewer.py)")
+    hs.cmd("kill $(pgrep -f ping)")
+    hb.cmd("kill $(pgrep -f ping)")
+    hv.cmd("kill $(pgrep -f ping)")
 
 
 def _parse_delay(net):
@@ -87,8 +99,11 @@ def livestremaing_test(video_file, dump_file):
     topo = LivestreamingSingleTopo(num_viewers=1)
     net = Mininet(topo=topo, link=TCLink, controller=RemoteController,
                   switch=OVSSwitch, autoSetMacs=True)
+    
     net.start()
     print "(ignore the above controller warning on port :6653)"
+
+    os.system("rm %s/*" % (OUTPUT_DIR,))
 
     # Dump the topology.
     print "### Topology ###"
@@ -104,10 +119,7 @@ def livestremaing_test(video_file, dump_file):
     _launch_service(net)
     _do_livestreaming(net, video_file, dump_file)
     _clean_all(net)
-    
-    # Parse the delay from the two logs 'output/hb.log', 'output/hv.log'.
-    print "### Results ###"
-    print "Delta in termination = %d ms" % (_parse_delay(net),)
+
     net.stop()
 
 
