@@ -8,6 +8,7 @@ import os
 import subprocess
 import socket
 import signal
+import time
 from multiprocessing import Process
 from common import *
 
@@ -37,6 +38,7 @@ class Broadcaster(object):
         self.notify_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         self.b2s_proc = None
+        self.p2p_viewers = []
         self.b2v_procs = []
 
         # Register signal catchers.
@@ -131,15 +133,20 @@ class Broadcaster(object):
         while True:
             notify_data = self.notify_sock.recv(1024).strip()
             if not notify_is_heartbeat(notify_data):
-                # Broadcaster -> Service connection still maintained.
                 viewer_ip = parse_notify_ip(notify_data)
-                b2v_log = OUTPUT_DIR + "/b2v-" + viewer_ip + ".log"
-                if os.path.exists(b2v_log):
-                    os.remove(b2v_log)
-                b2v_proc = Process(target=_stream_peer, args=(viewer_ip, b2v_log))
-                b2v_proc.start()
-                self.b2v_procs.append(b2v_proc)
-                print "[BCAST] Broadcaster -> Viewer (%s) P2P START" % (viewer_ip,)
+                if viewer_ip not in self.p2p_viewers:
+                    b2v_log = OUTPUT_DIR + "/b2v-" + viewer_ip + ".log"
+                    if os.path.exists(b2v_log):
+                        os.remove(b2v_log)
+                    b2v_proc = Process(target=_stream_peer, args=(viewer_ip, b2v_log))
+
+                    # Temp: WAIT UNTIL VIEWER IS READY.
+                    time.sleep(3)
+
+                    b2v_proc.start()
+                    self.p2p_viewers.append(viewer_ip)
+                    self.b2v_procs.append(b2v_proc)
+                    print "[BCAST] Broadcaster -> Viewer (%s) P2P START" % (viewer_ip,)
 
 
 if __name__ == "__main__":

@@ -56,16 +56,13 @@ And install the following dependencies:
 
 ## How to Run
 
-The following is an experiment walkthrough.
+Simply do:
 
-1. Log into the Vagrant VM. You should be at the `/livestreaming` path.
-    - Make at least 2 terminal windows here
-    - Make sure X11 is working correctly
-2. `$ sudo wireshark &` to launch WireShark. Keep WireShark window at side.
-    - In WireShark, capture with filter *any*
-    - Then, set display filter as required
-3. `$ ./src/pox/pox.py livestreaming.bypass` to launch our POX controller
-4. `$ sudo python src/live.py videos/30fps-600frames.flv output/viewed.flv` in another terminal to run the test
+```bash
+$ sudo ./run.sh     # This will run an experiment and generate a delay plot.
+```
+
+Check the generated delay plot at `results/delay-plot.png`.
 
 Key files in this project include:
 
