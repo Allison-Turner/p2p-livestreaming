@@ -47,7 +47,7 @@ class Viewer:
             frame = bsock.recv(FRAME_SIZE)
             while len(frame) < FRAME_SIZE:      # A frame may split into multiple packets.
                 frame += bsock.recv(FRAME_SIZE-len(frame))
-            assert(len(frame)==FRAME_SIZE)
+            assert len(frame)==FRAME_SIZE
             # Process the header to calculate latency for this frame.
             frame_send_time = parse_timestamp(header)
             current_time = time.time()
@@ -61,7 +61,7 @@ class Viewer:
         bsock, baddr = self.sock.accept()
         print "Sender {} connected.".format(baddr)
         # Receiving broadcast frames.
-        assert(bsock.recv(CTRL_MSG_LEN)==BCAST_BEG)
+        assert bsock.recv(CTRL_MSG_LEN)==BCAST_BEG
         frame_cnt = 0
         while _recv_frame(bsock, self.latency_measures):
             frame_cnt += 1
@@ -76,7 +76,7 @@ class Viewer:
 
 
 if __name__ == "__main__":
-    assert(len(sys.argv)==2)
+    assert len(sys.argv)==2
     port = int(sys.argv[1])
     viewer = Viewer(port)
     viewer.view()
